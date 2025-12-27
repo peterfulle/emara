@@ -177,6 +177,44 @@ docker exec magento_php bin/magento setup:static-content:deploy -f es_CL
 
 ---
 
+---
+
+## 🔄 Sincronizar Base de Datos entre Colaboradores
+
+**Importante:** Cada desarrollador tiene su propia base de datos local. Para trabajar con los mismos datos:
+
+### Exportar tu Base de Datos (Quien tiene los datos)
+
+```bash
+# Ejecutar el script de exportación
+./export-db.sh
+
+# Esto creará un archivo en backups/magento-FECHA.sql
+# Comparte este archivo por:
+# - Google Drive
+# - Dropbox  
+# - WeTransfer
+# - Slack/Discord
+```
+
+### Importar Base de Datos (Quien recibe los datos)
+
+```bash
+# Descargar el archivo .sql que te compartieron
+# Ejecutar el script de importación
+./import-db.sh backups/magento-20250127-120000.sql
+
+# El script te pedirá confirmación antes de sobrescribir tu BD
+```
+
+**Cuándo sincronizar la BD:**
+- ✅ Al inicio del proyecto (primera vez)
+- ✅ Cuando se agregan productos nuevos
+- ✅ Cuando se cambia configuración importante
+- ❌ NO es necesario para cambios de código/diseño
+
+---
+
 ## 🚨 Problemas Comunes
 
 ### Puerto ya en uso
@@ -193,14 +231,19 @@ ports:
 
 ### Base de datos vacía después de clonar
 
+Es normal. Tienes dos opciones:
+
+**Opción A: Usar la base de datos con todos los datos (Recomendado)**
 ```bash
-# Si necesitas la BD con datos, exporta/importa:
+# Pide el archivo .sql al equipo y luego:
+./import-db.sh backups/magento-YYYYMMDD-HHMMSS.sql
+```
 
-# Exportar (en el host original)
-docker exec magento_db mysqldump -umagento -pmagento magento > backup.sql
-
-# Importar (en el colaborador)
-docker exec -i magento_db mysql -umagento -pmagento magento < backup.sql
+**Opción B: Empezar desde cero**
+```bash
+# Reinstalar Magento desde cero
+./install-magento.sh
+# Tendrás una tienda vacía sin productos de muestra
 ```
 
 ### Permisos en archivos

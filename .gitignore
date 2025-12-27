@@ -24,3 +24,4 @@ auth.json
 # Archivos temporales
 tmp/
 temp/
+backups/
