@@ -1,0 +1,26 @@
+# Magento source files (generados por Composer)
+src/
+
+# Credenciales sensibles
+auth.json
+
+# Docker volumes y datos
+*.sql
+*.sql.gz
+
+# Logs
+*.log
+
+# MacOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos temporales
+tmp/
+temp/
