@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import ConfigurableProductSelector from './ConfigurableProductSelector';
+import AddToCartButton from './AddToCartButton';
 
 interface ProductDisplayProps {
   product: any;
@@ -59,12 +60,11 @@ export default function ProductDisplay({ product, isConfigurable, hasDiscount, d
         <div className="mb-8 pb-8 border-b border-gray-100">
           <div className="flex items-baseline gap-4">
             <span className="text-3xl font-light text-gray-900">
-              ${product.price_range.minimum_price.final_price.value.toFixed(0)}{' '}
-              {product.price_range.minimum_price.final_price.currency}
+              ${product.price_range.minimum_price.final_price.value.toLocaleString('es-CL')}
             </span>
             {hasDiscount && (
               <span className="text-xl text-gray-400 line-through font-light">
-                ${product.price_range.minimum_price.regular_price.value.toFixed(0)}
+                ${product.price_range.minimum_price.regular_price.value.toLocaleString('es-CL')}
               </span>
             )}
           </div>
@@ -146,9 +146,16 @@ export default function ProductDisplay({ product, isConfigurable, hasDiscount, d
           />
         ) : (
           <div className="space-y-4 mb-12">
-            <button className="w-full bg-black text-white py-4 text-sm tracking-wider uppercase hover:bg-gray-800 transition-all duration-300">
-              Agregar al carrito
-            </button>
+            <AddToCartButton 
+              product={{
+                id: product.id.toString(),
+                name: product.name,
+                sku: product.sku,
+                price: product.price_range.minimum_price.final_price.value,
+                currency: product.price_range.minimum_price.final_price.currency,
+                image: currentImage,
+              }}
+            />
             <button className="w-full border border-black py-4 text-sm tracking-wider uppercase hover:bg-black hover:text-white transition-all duration-300">
               Agregar a favoritos
             </button>

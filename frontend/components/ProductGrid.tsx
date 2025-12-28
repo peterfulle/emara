@@ -49,11 +49,11 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="flex items-center gap-2">
             {hasDiscount && (
               <span className="text-sm text-gray-400 line-through">
-                ${regularPrice.toFixed(0)}
+                ${regularPrice.toLocaleString('es-CL')}
               </span>
             )}
             <span className="text-base font-bold text-gray-900">
-              ${price.toFixed(0)} {currency}
+              ${price.toLocaleString('es-CL')}
             </span>
           </div>
         </div>

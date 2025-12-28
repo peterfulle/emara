@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import OTPInput from '@/components/OTPInput';
 import ChileFlagIcon from '@/components/ChileFlagIcon';
+import WebpayPayment from '@/components/WebpayPayment';
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
@@ -264,9 +265,44 @@ export default function CheckoutPage() {
 
       // Guardar en el historial local del usuario
       addOrder(newOrder);
-      setIsProcessing(false);
-      setOrderComplete(true);
-      clearCart();
+
+      // Iniciar pago con Webpay
+      console.log('Initiating Webpay payment...');
+      const webpayResponse = await fetch('/api/webpay/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: magentoOrder.order_id,
+          amount: Math.round(total),
+          buyOrder: magentoOrder.order_number,
+          returnUrl: `${window.location.origin}/checkout/webpay/return`,
+        }),
+      });
+
+      if (!webpayResponse.ok) {
+        const errorData = await webpayResponse.json();
+        throw new Error(errorData.details || 'Error creating Webpay transaction');
+      }
+
+      const { url, token } = await webpayResponse.json();
+      console.log('Webpay transaction created, redirecting...');
+
+      // Redirigir a Webpay
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token_ws';
+      tokenInput.value = token;
+      
+      form.appendChild(tokenInput);
+      document.body.appendChild(form);
+      form.submit();
+
     } catch (error) {
       console.error('Error creating order:', error);
       alert('Hubo un error al procesar tu pedido. Por favor intenta nuevamente.');
@@ -629,23 +665,12 @@ export default function CheckoutPage() {
                     <h2 className="text-sm tracking-wider uppercase text-gray-900 mb-6">
                       4. Método de Pago
                     </h2>
-                    <div className="border border-gray-200 p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <input
-                          type="radio"
-                          id="credit-card"
-                          name="payment"
-                          defaultChecked
-                          className="w-4 h-4"
-                        />
-                        <label htmlFor="credit-card" className="text-sm font-light">
-                          Tarjeta de Crédito/Débito
-                        </label>
-                      </div>
-                      <div className="pl-7 text-xs text-gray-500">
-                        Pago seguro procesado por Stripe
-                      </div>
-                    </div>
+                    <WebpayPayment
+                      onPaymentInitiated={(url, token) => {
+                        console.log('Payment initiated', url, token);
+                      }}
+                      isProcessing={isProcessing}
+                    />
                   </div>
 
                   {/* Botón de Envío */}

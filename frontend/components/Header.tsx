@@ -52,6 +52,9 @@ export default function Header() {
             <Link href="/ofertas" className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors">
               REBAJAS
             </Link>
+            <Link href="/admin/reportes" className="text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors">
+              REPORTES
+            </Link>
           </nav>
 
           {/* Actions */}

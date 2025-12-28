@@ -285,7 +285,7 @@ export async function setBillingAddress(cartId: string, address: CartAddress) {
 }
 
 // 6. Configurar método de pago
-export async function setPaymentMethod(cartId: string, paymentMethod: string = 'checkmo') {
+export async function setPaymentMethod(cartId: string, paymentMethod: string = 'transbank_webpay') {
   const mutation = `
     mutation($cartId: String!, $paymentMethod: String!) {
       setPaymentMethodOnCart(

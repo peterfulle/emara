@@ -1,0 +1,1 @@
+cd /Users/peterfulle/Desktop/emara/frontend && PORT=3001 npm run dev
