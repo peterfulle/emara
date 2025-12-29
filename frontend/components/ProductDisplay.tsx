@@ -195,6 +195,7 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
                 id: product.id,
                 name: product.name,
                 price: finalPrice,
+                currency: 'CLP',
                 sku: product.sku,
                 image: currentImage,
                 size: selectedSize,
