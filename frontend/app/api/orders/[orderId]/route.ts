@@ -5,10 +5,10 @@ const MAGENTO_TOKEN = process.env.MAGENTO_ADMIN_TOKEN;
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const { orderId } = params;
+    const { orderId } = await params;
 
     if (!MAGENTO_TOKEN) {
       return NextResponse.json(
