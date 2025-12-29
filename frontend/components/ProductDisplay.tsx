@@ -26,8 +26,8 @@ interface ProductDisplayProps {
 
 export default function ProductDisplay({ product }: ProductDisplayProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(undefined);
+  const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
 
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const discount = hasDiscount 
