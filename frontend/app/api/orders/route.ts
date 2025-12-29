@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrdersByEmail, convertMagentoOrderToOrderData } from '@/lib/magento/orders';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
@@ -62,6 +63,105 @@ export async function GET(request: Request) {
         details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       },
       { status: statusCode }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { 
+      customerData, 
+      shippingAddress, 
+      billingAddress, 
+      items, 
+      subtotal, 
+      shipping, 
+      tax, 
+      total 
+    } = body;
+
+    // Crear o encontrar cliente
+    let customer = await prisma.customer.findUnique({
+      where: { email: customerData.email }
+    });
+
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          email: customerData.email,
+          phone: customerData.phone || '',
+          firstName: customerData.firstName,
+          lastName: customerData.lastName,
+          rut: customerData.rut || null,
+        }
+      });
+    }
+
+    // Crear dirección de envío
+    const shippingAddr = await prisma.address.create({
+      data: {
+        customerId: customer.id,
+        street: shippingAddress.street,
+        city: shippingAddress.city,
+        region: shippingAddress.region,
+        postalCode: shippingAddress.postalCode || '',
+        country: shippingAddress.country || 'CL',
+        isDefault: false,
+      }
+    });
+
+    // Generar número de orden
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Crear orden
+    const order = await prisma.order.create({
+      data: {
+        orderNumber,
+        customerId: customer.id,
+        status: 'pending',
+        paymentStatus: 'pending',
+        paymentMethod: 'mercadopago',
+        subtotal,
+        shipping,
+        tax,
+        total,
+        shippingAddress: JSON.stringify(shippingAddress),
+        billingAddress: JSON.stringify(billingAddress),
+        metadata: JSON.stringify({
+          createdAt: new Date().toISOString(),
+          ip: request.headers.get('x-forwarded-for') || 'unknown'
+        }),
+        orderItems: {
+          create: items.map((item: any) => ({
+            productId: item.productId,
+            sku: item.sku,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            size: item.size || null,
+            color: item.color || null,
+            subtotal: item.price * item.quantity,
+          }))
+        }
+      },
+      include: {
+        orderItems: true,
+        customer: true,
+      }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      order,
+      orderNumber 
+    });
+
+  } catch (error: any) {
+    console.error('Error creating order:', error);
+    return NextResponse.json(
+      { error: 'Error al crear orden', details: error.message },
+      { status: 500 }
     );
   }
 }

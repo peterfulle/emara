@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Usuario administrador
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin") // admin, superadmin, editor
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Productos
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  description String?
+  price       Float
+  salePrice   Float?
+  stock       Int      @default(0)
+  images      String   // JSON array de URLs
+  category    String
+  sizes       String?  // JSON array
+  colors      String?  // JSON array
+  active      Boolean  @default(true)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+// Clientes
+model Customer {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?
+  firstName String
+  lastName  String
+  rut       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+  addresses Address[]
+
+  @@map("customers")
+}
+
+// Direcciones
+model Address {
+  id         String   @id @default(uuid())
+  customerId String
+  street     String
+  number     String
+  apartment  String?
+  city       String
+  region     String
+  zipCode    String?
+  country    String   @default("Chile")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+// Órdenes
+model Order {
+  id              String   @id @default(uuid())
+  orderNumber     String   @unique
+  customerId      String
+  status          String   @default("pending") // pending, processing, completed, cancelled
+  paymentStatus   String   @default("pending") // pending, paid, failed, refunded
+  paymentMethod   String   // webpay, mercadopago, etc
+  subtotal        Float
+  shipping        Float    @default(0)
+  tax             Float    @default(0)
+  total           Float
+  shippingAddress String   // JSON
+  billingAddress  String?  // JSON
+  notes           String?
+  metadata        String?  // JSON - info de pago, tracking, etc
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+// Items de orden
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  sku       String
+  name      String
+  price     Float
+  quantity  Int
+  size      String?
+  color     String?
+  subtotal  Float
+  createdAt DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// Configuración del sitio
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  type      String   @default("text") // text, json, boolean, number
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// Log de actividad
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String
+  entity      String   // product, order, customer, etc
+  entityId    String?
+  description String
+  metadata    String?  // JSON
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@map("activity_logs")
+}

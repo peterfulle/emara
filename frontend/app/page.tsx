@@ -1,5 +1,3 @@
-import { magentoClient, ProductsResponse } from '@/lib/magento/client';
-import { GET_PRODUCTS } from '@/lib/magento/queries';
 import Hero from '@/components/Hero';
 import ProductGrid from '@/components/ProductGrid';
 import CategoryGrid from '@/components/CategoryGrid';
@@ -11,11 +9,16 @@ export default async function Home() {
   let products: any[] = [];
   
   try {
-    const data = await magentoClient.request<ProductsResponse>(GET_PRODUCTS, {
-      pageSize: 8,
-      currentPage: 1,
+    // Obtener productos de nuestra base de datos
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+    const response = await fetch(`${baseUrl}/api/products?limit=8`, {
+      cache: 'no-store' // Siempre obtener datos frescos
     });
-    products = data.products.items;
+    
+    if (response.ok) {
+      const data = await response.json();
+      products = data.products || [];
+    }
   } catch (error) {
     console.error('Error fetching products:', error);
     products = [];

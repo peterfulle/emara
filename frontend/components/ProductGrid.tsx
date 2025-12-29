@@ -2,23 +2,43 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Product } from '@/lib/magento/client';
+
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  description: string | null;
+  price: number;
+  salePrice: number | null;
+  stock: number;
+  images: string | null;
+  category: string;
+  active: boolean;
+  featured: boolean;
+}
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const price = product.price_range.minimum_price.final_price.value;
-  const currency = product.price_range.minimum_price.final_price.currency;
-  const regularPrice = product.price_range.minimum_price.regular_price.value;
-  const hasDiscount = price < regularPrice;
+  const price = product.salePrice || product.price;
+  const regularPrice = product.price;
+  const hasDiscount = product.salePrice && product.salePrice < regularPrice;
   
-  // Obtener URL de imagen de manera segura
-  const imageUrl = product.small_image?.url || product.image?.url;
+  // Parsear imágenes (almacenadas como JSON string)
+  let images: string[] = [];
+  if (product.images) {
+    try {
+      images = JSON.parse(product.images);
+    } catch (e) {
+      images = [];
+    }
+  }
+  const imageUrl = images[0];
 
   return (
-    <Link href={`/producto/${product.url_key}`} className="group">
+    <Link href={`/producto/${product.sku.toLowerCase()}`} className="group">
       <div className="bg-white overflow-hidden transition-all duration-300">
         <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden mb-3">
           {imageUrl ? (
@@ -38,6 +58,11 @@ export function ProductCard({ product }: ProductCardProps) {
           {hasDiscount && (
             <div className="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 text-xs font-bold">
               SALE
+            </div>
+          )}
+          {product.featured && (
+            <div className="absolute top-3 left-3 bg-black text-white px-2 py-1 text-xs font-bold">
+              DESTACADO
             </div>
           )}
           <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
