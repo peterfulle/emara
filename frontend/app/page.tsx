@@ -8,7 +8,7 @@ import TrendingSection from '@/components/TrendingSection';
 import Newsletter from '@/components/Newsletter';
 
 export default async function Home() {
-  let products = [];
+  let products: any[] = [];
   
   try {
     const data = await magentoClient.request<ProductsResponse>(GET_PRODUCTS, {
