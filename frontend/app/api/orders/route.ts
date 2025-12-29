@@ -103,10 +103,11 @@ export async function POST(request: Request) {
       data: {
         customerId: customer.id,
         street: shippingAddress.street,
+        number: '',
         city: shippingAddress.city,
         region: shippingAddress.region,
-        postalCode: shippingAddress.postalCode || '',
-        country: shippingAddress.country || 'CL',
+        zipCode: shippingAddress.postalCode || '',
+        country: shippingAddress.country || 'Chile',
         isDefault: false,
       }
     });
