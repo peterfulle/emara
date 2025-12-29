@@ -11,10 +11,13 @@ interface AddToCartButtonProps {
     price: number;
     currency: string;
     image?: string;
+    size?: string;
+    color?: string;
   };
+  disabled?: boolean;
 }
 
-export default function AddToCartButton({ product }: AddToCartButtonProps) {
+export default function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
   const { addItem } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -41,8 +44,8 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
     <div className="relative">
       <button
         onClick={handleAddToCart}
-        disabled={isAdding}
-        className={`w-full bg-black text-white py-4 text-sm tracking-wider uppercase transition-all duration-300 ${
+        disabled={isAdding || disabled}
+        className={`w-full bg-black text-white py-4 text-sm tracking-wider uppercase transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
           isAdding ? 'scale-[0.98] opacity-80' : 'hover:bg-gray-800'
         } ${showSuccess ? 'bg-green-600 hover:bg-green-600' : ''}`}
       >
