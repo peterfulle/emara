@@ -6,6 +6,10 @@ import TrendingSection from '@/components/TrendingSection';
 import Newsletter from '@/components/Newsletter';
 import { prisma } from '@/lib/prisma';
 
+// Deshabilitar caché para ver cambios en tiempo real
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Home() {
   let products: any[] = [];
   
