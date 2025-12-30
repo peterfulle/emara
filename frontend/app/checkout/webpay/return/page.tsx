@@ -32,6 +32,7 @@ function WebpayReturnContent() {
 
   const confirmTransaction = async (token: string) => {
     try {
+      // 1. Confirmar con Transbank mediante el servidor Python
       const webpayUrl = process.env.NEXT_PUBLIC_WEBPAY_URL || 'http://localhost:5001';
       const response = await fetch(`${webpayUrl}/webpay/commit`, {
         method: 'POST',
@@ -43,73 +44,38 @@ function WebpayReturnContent() {
 
       const data = await response.json();
 
+      // 2. Actualizar la orden en la base de datos
+      await fetch('/api/webpay/commit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          responseCode: data.responseCode,
+          authorizationCode: data.authorizationCode,
+          amount: data.amount,
+          buyOrder: data.buyOrder,
+          cardNumber: data.cardDetail?.cardNumber,
+          transactionDate: data.transactionDate,
+          paymentTypeCode: data.paymentTypeCode
+        }),
+      });
+
       if (data.success) {
         setStatus('success');
         setTransactionData(data);
         
-        // Actualizar la orden con los datos de la transacción
-        await updateOrderWithTransaction(data);
+        // Limpiar el carrito
+        sessionStorage.removeItem('webpay_order');
+        sessionStorage.removeItem('orderInfo');
       } else {
         setStatus('failed');
         setTransactionData(data);
-        
-        // Actualizar orden como fallida
-        await updateOrderAsFailed(data);
       }
     } catch (error) {
       console.error('Error confirming transaction:', error);
       setStatus('failed');
-    }
-  };
-
-  const updateOrderWithTransaction = async (transactionData: any) => {
-    try {
-      const orderInfo = sessionStorage.getItem('orderInfo');
-      if (!orderInfo) return;
-      
-      const order = JSON.parse(orderInfo);
-      
-      await fetch('/api/orders/update-transaction', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderNumber: order.orderNumber,
-          authorizationCode: transactionData.authorizationCode,
-          transactionDate: transactionData.transactionDate,
-          cardNumber: transactionData.cardDetail?.cardNumber,
-          responseCode: transactionData.responseCode,
-          paymentStatus: 'paid',
-          status: 'completed'
-        }),
-      });
-    } catch (error) {
-      console.error('Error updating order:', error);
-    }
-  };
-
-  const updateOrderAsFailed = async (transactionData: any) => {
-    try {
-      const orderInfo = sessionStorage.getItem('orderInfo');
-      if (!orderInfo) return;
-      
-      const order = JSON.parse(orderInfo);
-      
-      await fetch('/api/orders/update-transaction', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderNumber: order.orderNumber,
-          responseCode: transactionData.responseCode,
-          paymentStatus: 'failed',
-          status: 'cancelled'
-        }),
-      });
-    } catch (error) {
-      console.error('Error updating order:', error);
     }
   };
 

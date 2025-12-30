@@ -20,3 +20,8 @@ Frontend: http://localhost:3001
 Webpay Server: http://localhost:5001
 Health Check: http://localhost:5001/health
 
+
+
+TRANSBANK_COMMERCE_CODE = 597053036691  (tu código real)
+TRANSBANK_API_KEY = [la que te den]  (tu API key real)
+TRANSBANK_ENVIRONMENT = PRODUCCION
