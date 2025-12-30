@@ -32,10 +32,11 @@ export function ProductCard({ product }: ProductCardProps) {
     try {
       images = JSON.parse(product.images);
     } catch (e) {
+      console.error('Error parsing images for product:', product.sku, e);
       images = [];
     }
   }
-  const imageUrl = images[0];
+  const imageUrl = images.length > 0 && images[0] ? images[0] : null;
 
   return (
     <Link href={`/producto/${product.sku.toLowerCase()}`} className="group">

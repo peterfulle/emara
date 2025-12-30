@@ -19,6 +19,12 @@ export default async function Home() {
       ],
       take: 8
     });
+    
+    console.log('=== PRODUCTOS CARGADOS EN HOME ===');
+    console.log('Total productos:', products.length);
+    products.forEach(p => {
+      console.log(`- ${p.name} (${p.sku}): images=${p.images}`);
+    });
   } catch (error) {
     console.error('Error fetching products:', error);
     products = [];
