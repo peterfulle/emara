@@ -13,7 +13,7 @@ async function checkAuth(request: NextRequest) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await checkAuth(request);
@@ -24,8 +24,10 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         customer: true,
         orderItems: {
