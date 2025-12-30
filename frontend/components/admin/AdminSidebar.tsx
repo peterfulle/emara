@@ -63,19 +63,19 @@ export default function AdminSidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white shadow-2xl flex flex-col z-50">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-black text-white flex flex-col z-50 border-r border-gray-900">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-700">
+      <div className="p-8 border-b border-gray-900">
         <Link href="/admin/dashboard" className="block">
-          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-light tracking-tight text-white mb-1">
             EMARA
           </h1>
-          <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest">Admin Panel</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest">Admin</p>
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
@@ -83,46 +83,46 @@ export default function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={`
-                flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
-                transition-all duration-200 group
+                flex items-center gap-4 px-5 py-4 text-sm font-light
+                transition-all duration-200 group relative
                 ${isActive
-                  ? 'bg-white text-gray-900 shadow-lg'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'text-white'
+                  : 'text-gray-500 hover:text-white'
                 }
               `}
             >
-              <span className={`${isActive ? 'text-gray-900' : 'text-gray-400 group-hover:text-white'} transition-colors`}>
+              {isActive && (
+                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-white"></div>
+              )}
+              <span className={`${isActive ? 'text-white' : 'text-gray-600 group-hover:text-gray-400'} transition-colors`}>
                 {item.icon}
               </span>
-              <span>{item.name}</span>
-              {isActive && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gray-900"></span>
-              )}
+              <span className="tracking-wide">{item.name}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-700 space-y-3">
+      <div className="p-4 border-t border-gray-900 space-y-2">
         <Link
           href="/"
           target="_blank"
-          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
+          className="flex items-center gap-4 px-5 py-3 text-sm text-gray-500 hover:text-white transition-all font-light"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          Ver Tienda
+          <span className="tracking-wide">Ver Tienda</span>
         </Link>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-all w-full"
+          className="flex items-center gap-4 px-5 py-3 text-sm text-gray-500 hover:text-white transition-all w-full font-light"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Cerrar Sesión
+          <span className="tracking-wide">Cerrar Sesión</span>
         </button>
       </div>
     </aside>
