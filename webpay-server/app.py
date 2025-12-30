@@ -22,8 +22,11 @@ ENVIRONMENT = os.getenv('TRANSBANK_ENVIRONMENT', 'INTEGRACION')
 # URL de retorno
 BASE_URL = os.getenv('BASE_URL', 'http://localhost:3001')
 
+# Determinar el tipo de integración basado en el ambiente
+integration_type = IntegrationType.LIVE if ENVIRONMENT == 'PRODUCCION' else IntegrationType.TEST
+
 # Crear opciones de configuración para Transbank
-webpay_options = WebpayOptions(COMMERCE_CODE, API_KEY, IntegrationType.TEST)
+webpay_options = WebpayOptions(COMMERCE_CODE, API_KEY, integration_type)
 
 print(f"\n{'='*60}")
 print(f"  Webpay Plus Python Server - Inicializando")
