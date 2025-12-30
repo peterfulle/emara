@@ -25,7 +25,7 @@ export default function AdminProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'name' | 'category' | 'price' | 'stock' | 'status'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'category' | 'price' | 'stock' | 'active'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -33,7 +33,7 @@ export default function AdminProductsPage() {
 
   const categories = ['Camisas', 'Pantalones', 'Accesorios', 'Calzado', 'Chaquetas'];
 
-  const handleSort = (column: 'name' | 'category' | 'price' | 'stock' | 'status') => {
+  const handleSort = (column: 'name' | 'category' | 'price' | 'stock' | 'active') => {
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -47,8 +47,8 @@ export default function AdminProductsPage() {
       let compareA: any = a[sortBy];
       let compareB: any = b[sortBy];
 
-      // Handle status (active boolean)
-      if (sortBy === 'status') {
+      // Handle active (boolean)
+      if (sortBy === 'active') {
         compareA = a.active ? 1 : 0;
         compareB = b.active ? 1 : 0;
       }
@@ -322,14 +322,14 @@ export default function AdminProductsPage() {
                     </div>
                   </th>
                   <th 
-                    onClick={() => handleSort('status')}
+                    onClick={() => handleSort('active')}
                     className="px-4 py-2.5 text-center text-[10px] font-medium text-gray-500 uppercase tracking-widest cursor-pointer hover:text-black transition-colors select-none group"
                   >
                     <div className="flex items-center justify-center gap-1">
                       Estado
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
-                        {sortBy !== 'status' && '↕'}
+                        {sortBy === 'active' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        {sortBy !== 'active' && '↕'}
                       </span>
                     </div>
                   </th>
