@@ -19,17 +19,20 @@ interface Product {
 
 async function getProduct(sku: string): Promise<Product | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
-    const response = await fetch(`${baseUrl}/api/products/${sku}`, {
-      cache: 'no-store',
+    // En producción, usar URL del servidor directamente con prisma
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    const product = await prisma.product.findFirst({
+      where: {
+        sku: sku.toUpperCase(),
+        active: true,
+      },
     });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data.product;
+    
+    await prisma.$disconnect();
+    
+    return product;
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
