@@ -21,6 +21,7 @@ export default function CheckoutPage() {
     country: 'Chile',
   });
 
+  const [shippingOption, setShippingOption] = useState<'standard' | 'pickup'>('standard');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,7 +44,7 @@ export default function CheckoutPage() {
     'Región de Magallanes'
   ];
 
-  const shippingCost = 3990;
+  const shippingCost = shippingOption === 'standard' ? 3990 : 0;
   const tax = Math.round(totalPrice * 0.19); // IVA 19%
   const finalTotal = totalPrice + shippingCost + tax;
 
@@ -313,6 +314,44 @@ export default function CheckoutPage() {
                   onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
                 />
+              </div>
+
+              {/* Opciones de Envío */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-4">
+                  Método de Envío <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between p-4 border-2 border-gray-300 cursor-pointer hover:border-black transition-colors">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="shipping"
+                        value="standard"
+                        checked={shippingOption === 'standard'}
+                        onChange={() => setShippingOption('standard')}
+                        className="w-4 h-4 text-black focus:ring-black"
+                      />
+                      <span className="ml-3 text-sm text-gray-900">Envío Estándar</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">$3.990</span>
+                  </label>
+                  
+                  <label className="flex items-center justify-between p-4 border-2 border-gray-300 cursor-pointer hover:border-black transition-colors">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="shipping"
+                        value="pickup"
+                        checked={shippingOption === 'pickup'}
+                        onChange={() => setShippingOption('pickup')}
+                        className="w-4 h-4 text-black focus:ring-black"
+                      />
+                      <span className="ml-3 text-sm text-gray-900">Envío por Pagar</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">$0</span>
+                  </label>
+                </div>
               </div>
 
               {/* Botón de envío */}
