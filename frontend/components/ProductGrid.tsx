@@ -39,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const imageUrl = images.length > 0 && images[0] ? images[0] : null;
 
   return (
-    <Link href={`/producto/${product.sku}`} className="group">{
+    <Link href={`/producto/${product.sku}`} className="group">
       <div className="bg-white overflow-hidden transition-all duration-300">
         <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden mb-3">
           {imageUrl ? (
