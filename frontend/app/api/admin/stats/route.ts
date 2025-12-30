@@ -34,9 +34,13 @@ export async function GET(request: NextRequest) {
       prisma.product.count(),
       prisma.product.count({ where: { active: true } }),
       prisma.order.count(),
-      prisma.order.count({ where: { status: 'pending' } }),
+      prisma.order.count({ where: { paymentStatus: 'pending' } }),
       prisma.customer.count(),
+      // Solo contar ingresos de órdenes pagadas
       prisma.order.aggregate({
+        where: {
+          paymentStatus: 'paid'
+        },
         _sum: {
           total: true
         }

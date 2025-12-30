@@ -4,21 +4,21 @@ import CategoryGrid from '@/components/CategoryGrid';
 import LookbookSection from '@/components/LookbookSection';
 import TrendingSection from '@/components/TrendingSection';
 import Newsletter from '@/components/Newsletter';
+import { prisma } from '@/lib/prisma';
 
 export default async function Home() {
   let products: any[] = [];
   
   try {
-    // Obtener productos de nuestra base de datos
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
-    const response = await fetch(`${baseUrl}/api/products?limit=8`, {
-      cache: 'no-store' // Siempre obtener datos frescos
+    // Obtener productos directamente de la base de datos
+    products = await prisma.product.findMany({
+      where: { active: true },
+      orderBy: [
+        { featured: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      take: 8
     });
-    
-    if (response.ok) {
-      const data = await response.json();
-      products = data.products || [];
-    }
   } catch (error) {
     console.error('Error fetching products:', error);
     products = [];

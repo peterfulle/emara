@@ -32,7 +32,8 @@ function WebpayReturnContent() {
 
   const confirmTransaction = async (token: string) => {
     try {
-      const response = await fetch('/api/webpay/commit', {
+      const webpayUrl = process.env.NEXT_PUBLIC_WEBPAY_URL || 'http://localhost:5001';
+      const response = await fetch(`${webpayUrl}/webpay/commit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,23 +43,73 @@ function WebpayReturnContent() {
 
       const data = await response.json();
 
-      if (data.success && data.transaction) {
-        const transaction = data.transaction;
+      if (data.success) {
+        setStatus('success');
+        setTransactionData(data);
         
-        // Verificar el código de respuesta de Transbank
-        if (transaction.response_code === 0) {
-          setStatus('success');
-          setTransactionData(transaction);
-        } else {
-          setStatus('failed');
-          setTransactionData(transaction);
-        }
+        // Actualizar la orden con los datos de la transacción
+        await updateOrderWithTransaction(data);
       } else {
         setStatus('failed');
+        setTransactionData(data);
+        
+        // Actualizar orden como fallida
+        await updateOrderAsFailed(data);
       }
     } catch (error) {
       console.error('Error confirming transaction:', error);
       setStatus('failed');
+    }
+  };
+
+  const updateOrderWithTransaction = async (transactionData: any) => {
+    try {
+      const orderInfo = sessionStorage.getItem('orderInfo');
+      if (!orderInfo) return;
+      
+      const order = JSON.parse(orderInfo);
+      
+      await fetch('/api/orders/update-transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderNumber: order.orderNumber,
+          authorizationCode: transactionData.authorizationCode,
+          transactionDate: transactionData.transactionDate,
+          cardNumber: transactionData.cardDetail?.cardNumber,
+          responseCode: transactionData.responseCode,
+          paymentStatus: 'paid',
+          status: 'completed'
+        }),
+      });
+    } catch (error) {
+      console.error('Error updating order:', error);
+    }
+  };
+
+  const updateOrderAsFailed = async (transactionData: any) => {
+    try {
+      const orderInfo = sessionStorage.getItem('orderInfo');
+      if (!orderInfo) return;
+      
+      const order = JSON.parse(orderInfo);
+      
+      await fetch('/api/orders/update-transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderNumber: order.orderNumber,
+          responseCode: transactionData.responseCode,
+          paymentStatus: 'failed',
+          status: 'cancelled'
+        }),
+      });
+    } catch (error) {
+      console.error('Error updating order:', error);
     }
   };
 
@@ -128,11 +179,11 @@ function WebpayReturnContent() {
             {transactionData && (
               <div className="bg-red-50 border border-red-200 rounded p-4 mb-8 text-left">
                 <p className="text-sm text-red-800">
-                  <strong>Código de respuesta:</strong> {transactionData.response_code}
+                  <strong>Código de respuesta:</strong> {transactionData.responseCode}
                 </p>
-                {transactionData.authorization_code && (
+                {transactionData.authorizationCode && (
                   <p className="text-sm text-red-800">
-                    <strong>Código de autorización:</strong> {transactionData.authorization_code}
+                    <strong>Código de autorización:</strong> {transactionData.authorizationCode}
                   </p>
                 )}
               </div>
@@ -182,24 +233,30 @@ function WebpayReturnContent() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Orden de Compra:</span>
-                  <span className="font-medium">{transactionData.buy_order}</span>
+                  <span className="font-medium">{transactionData.buyOrder}</span>
                 </div>
-                {transactionData.authorization_code && (
+                {transactionData.authorizationCode && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Código de Autorización:</span>
-                    <span className="font-medium">{transactionData.authorization_code}</span>
+                    <span className="font-medium">{transactionData.authorizationCode}</span>
                   </div>
                 )}
-                {transactionData.card_number && (
+                {transactionData.cardDetail?.cardNumber && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tarjeta:</span>
-                    <span className="font-medium">**** **** **** {transactionData.card_number}</span>
+                    <span className="font-medium">**** **** **** {transactionData.cardDetail.cardNumber}</span>
                   </div>
                 )}
                 {transactionData.amount && (
                   <div className="flex justify-between border-t border-gray-200 pt-3">
-                    <span className="text-gray-900 font-medium">Monto Total:</span>
-                    <span className="font-medium">${transactionData.amount.toLocaleString('es-CL')} CLP</span>
+                    <span className="text-gray-600">Monto Total:</span>
+                    <span className="font-medium text-lg">${transactionData.amount.toLocaleString('es-CL')} CLP</span>
+                  </div>
+                )}
+                {transactionData.transactionDate && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Fecha:</span>
+                    <span className="font-medium">{new Date(transactionData.transactionDate).toLocaleString('es-CL')}</span>
                   </div>
                 )}
               </div>

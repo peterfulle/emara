@@ -1,12 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma schema para producción (PostgreSQL)
+// Usar este archivo en producción con: cp schema.production.prisma schema.prisma
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -16,7 +16,7 @@ model User {
   email     String   @unique
   password  String
   name      String
-  role      String   @default("admin") // admin, superadmin, editor
+  role      String   @default("admin")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -33,10 +33,10 @@ model Product {
   price       Float
   salePrice   Float?
   stock       Int      @default(0)
-  images      String   // JSON array de URLs
+  images      String
   category    String
-  sizes       String?  // JSON array
-  colors      String?  // JSON array
+  sizes       String?
+  colors      String?
   active      Boolean  @default(true)
   featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -89,23 +89,22 @@ model Order {
   id                  String   @id @default(uuid())
   orderNumber         String   @unique
   customerId          String
-  status              String   @default("pending") // pending, processing, completed, cancelled
-  paymentStatus       String   @default("pending") // pending, paid, failed, refunded
-  paymentMethod       String   // webpay, mercadopago, etc
+  status              String   @default("pending")
+  paymentStatus       String   @default("pending")
+  paymentMethod       String
   subtotal            Float
   shipping            Float    @default(0)
   tax                 Float    @default(0)
   total               Float
-  shippingAddress     String   // JSON
-  billingAddress      String?  // JSON
+  shippingAddress     String
+  billingAddress      String?
   notes               String?
-  metadata            String?  // JSON - info de pago, tracking, etc
+  metadata            String?
   
-  // Campos de Webpay
-  authorizationCode   String?  // Código de autorización de Transbank
-  transactionDate     DateTime? // Fecha de la transacción
-  cardNumber          String?  // Últimos 4 dígitos de la tarjeta
-  responseCode        Int?     // Código de respuesta de Transbank
+  authorizationCode   String?
+  transactionDate     DateTime?
+  cardNumber          String?
+  responseCode        Int?
   
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -141,7 +140,7 @@ model Setting {
   id        String   @id @default(uuid())
   key       String   @unique
   value     String
-  type      String   @default("text") // text, json, boolean, number
+  type      String   @default("text")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -153,11 +152,9 @@ model ActivityLog {
   id          String   @id @default(uuid())
   userId      String?
   action      String
-  entity      String   // product, order, customer, etc
+  entity      String
   entityId    String?
-  description String
-  metadata    String?  // JSON
-  ipAddress   String?
+  metadata    String?
   createdAt   DateTime @default(now())
 
   @@map("activity_logs")

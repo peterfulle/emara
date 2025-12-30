@@ -101,34 +101,46 @@ export default function CheckoutPage() {
 
       const { order, orderNumber } = await orderResponse.json();
 
-      // 2. Crear preferencia de Mercado Pago
-      const mpResponse = await fetch('/api/mercadopago/create-preference', {
+      // 2. Crear transacción de Webpay Plus
+      const webpayUrl = process.env.NEXT_PUBLIC_WEBPAY_URL || 'http://localhost:5001';
+      const webpayResponse = await fetch(`${webpayUrl}/webpay/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: order.id,
-          orderNumber,
-          total: finalTotal,
-          customerEmail: formData.email,
-          items: items.map(item => ({
-            name: item.name,
-            sku: item.sku,
-            price: item.price,
-            quantity: item.quantity,
-          })),
+          amount: finalTotal,
+          buyOrder: orderNumber,
+          returnUrl: `${window.location.origin}/checkout/webpay/return`,
         })
       });
 
-      if (!mpResponse.ok) {
-        throw new Error('Error al crear preferencia de pago');
+      if (!webpayResponse.ok) {
+        const errorData = await webpayResponse.json();
+        throw new Error(errorData.error || 'Error al crear transacción de pago');
       }
 
-      const { initPoint, sandboxInitPoint } = await mpResponse.json();
+      const { url, token } = await webpayResponse.json();
 
-      // 3. Redirigir a Mercado Pago
-      // Usar sandboxInitPoint para pruebas, initPoint para producción
-      const paymentUrl = process.env.NODE_ENV === 'production' ? initPoint : sandboxInitPoint;
-      window.location.href = paymentUrl;
+      // 3. Guardar información de la orden en sessionStorage para recuperarla después
+      sessionStorage.setItem('webpay_order', JSON.stringify({
+        orderId: order.id,
+        orderNumber,
+        total: finalTotal,
+      }));
+
+      // 4. Crear formulario y redirigir a Webpay
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token_ws';
+      tokenInput.value = token;
+      
+      form.appendChild(tokenInput);
+      document.body.appendChild(form);
+      form.submit();
 
     } catch (err: any) {
       setError(err.message || 'Error al procesar el pago');
@@ -309,7 +321,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 className="w-full bg-black text-white py-4 text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {isProcessing ? 'Procesando...' : 'Ir a Pagar con Mercado Pago'}
+                {isProcessing ? 'Procesando...' : 'Pagar con Webpay Plus'}
               </button>
             </form>
           </div>
@@ -373,9 +385,21 @@ export default function CheckoutPage() {
 
               {/* Logos de pago */}
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-xs text-gray-500 text-center mb-3">Pago seguro con</p>
-                <div className="flex justify-center">
-                  <div className="text-2xl font-bold text-blue-500">Mercado Pago</div>
+                <p className="text-xs text-gray-500 text-center mb-3">Pago 100% seguro con</p>
+                <div className="flex flex-col items-center gap-2">
+                  <svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="120" height="40" rx="4" fill="#0066CC"/>
+                    <text x="60" y="26" fontFamily="Arial, sans-serif" fontSize="16" fontWeight="bold" fill="white" textAnchor="middle">
+                      Webpay Plus
+                    </text>
+                  </svg>
+                  <div className="flex gap-2 items-center text-xs text-gray-400">
+                    <span>Visa</span>
+                    <span>•</span>
+                    <span>Mastercard</span>
+                    <span>•</span>
+                    <span>Redcompra</span>
+                  </div>
                 </div>
               </div>
             </div>

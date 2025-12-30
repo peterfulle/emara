@@ -1,0 +1,49 @@
+services:
+  # Frontend Next.js
+  - type: web
+    name: emara-frontend
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: chmod +x ./frontend/render-build.sh && ./frontend/render-build.sh
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: emara-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NEXT_PUBLIC_WEBPAY_URL
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+
+  # Webpay Python Server
+  - type: web
+    name: emara-webpay
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: cd webpay-server && pip install -r requirements.txt
+    startCommand: cd webpay-server && gunicorn app:app
+    envVars:
+      - key: TRANSBANK_COMMERCE_CODE
+        sync: false
+      - key: TRANSBANK_API_KEY
+        sync: false
+      - key: TRANSBANK_ENVIRONMENT
+        value: INTEGRACION
+      - key: BASE_URL
+        sync: false
+      - key: PORT
+        value: 5000
+
+databases:
+  - name: emara-db
+    databaseName: emara
+    user: emara
+    plan: free
+    region: oregon

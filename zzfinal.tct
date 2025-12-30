@@ -1,1 +1,22 @@
+# INICIAR APLICACIÓN COMPLETA (Frontend + Webpay Server Python)
+cd /Users/peterfulle/Desktop/emara && ./start-all.sh
+
+# O SOLO FRONTEND
 cd /Users/peterfulle/Desktop/emara/frontend && PORT=3001 npm run dev
+
+# O SOLO SERVIDOR WEBPAY (Python)
+cd /Users/peterfulle/Desktop/emara && ./start-webpay-only.sh
+
+# CREDENCIALES
+Email: admin@emara.cl
+Password: Admin123!
+
+# WEBPAY PLUS - CÓDIGO DE COMERCIO
+Código de Comercio Producción: 597053036691
+Email: carolinasaezcanales@gmail.com
+
+# URLs
+Frontend: http://localhost:3001
+Webpay Server: http://localhost:5001
+Health Check: http://localhost:5001/health
+
