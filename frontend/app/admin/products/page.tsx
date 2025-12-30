@@ -22,13 +22,54 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'name' | 'category' | 'price' | 'stock' | 'status'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const router = useRouter();
 
+  const categories = ['Camisas', 'Pantalones', 'Accesorios', 'Calzado', 'Chaquetas'];
+
+  const handleSort = (column: 'name' | 'category' | 'price' | 'stock' | 'status') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortedProducts = (productsToSort: Product[]) => {
+    const sorted = [...productsToSort].sort((a, b) => {
+      let compareA: any = a[sortBy];
+      let compareB: any = b[sortBy];
+
+      // Handle status (active boolean)
+      if (sortBy === 'status') {
+        compareA = a.active ? 1 : 0;
+        compareB = b.active ? 1 : 0;
+      }
+
+      // Handle string comparison
+      if (typeof compareA === 'string') {
+        compareA = compareA.toLowerCase();
+        compareB = compareB.toLowerCase();
+      }
+
+      if (compareA < compareB) return sortOrder === 'asc' ? -1 : 1;
+      if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  };
+
   useEffect(() => {
     checkAuth();
-  }, [page, search]);
+  }, [page, search, categoryFilter, statusFilter, stockFilter]);
 
   const checkAuth = async () => {
     const token = localStorage.getItem('admin_token');
@@ -56,7 +97,10 @@ export default function AdminProductsPage() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
-        ...(search && { search })
+        ...(search && { search }),
+        ...(categoryFilter !== 'all' && { category: categoryFilter }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(stockFilter !== 'all' && { stock: stockFilter })
       });
 
       const response = await fetch(`/api/admin/products?${params}`, {
@@ -65,7 +109,25 @@ export default function AdminProductsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.products);
+        
+        // Aplicar filtros en el cliente si la API no los soporta completamente
+        let filteredProducts = data.products;
+        
+        if (statusFilter === 'active') {
+          filteredProducts = filteredProducts.filter((p: Product) => p.active);
+        } else if (statusFilter === 'inactive') {
+          filteredProducts = filteredProducts.filter((p: Product) => !p.active);
+        }
+        
+        if (stockFilter === 'low') {
+          filteredProducts = filteredProducts.filter((p: Product) => p.stock > 0 && p.stock <= 10);
+        } else if (stockFilter === 'out') {
+          filteredProducts = filteredProducts.filter((p: Product) => p.stock === 0);
+        } else if (stockFilter === 'available') {
+          filteredProducts = filteredProducts.filter((p: Product) => p.stock > 10);
+        }
+        
+        setProducts(filteredProducts);
         setTotalPages(data.pagination.pages);
       }
     } catch (error) {
@@ -82,181 +144,252 @@ export default function AdminProductsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600">Cargando productos...</p>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+    <div className="min-h-screen bg-white">
+      {/* Header Compacto */}
+      <div className="border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
-              <Link href="/admin/dashboard" className="text-2xl font-light tracking-tight text-black">
-                EMARA ADMIN
+              <Link href="/admin/dashboard" className="text-xl font-light tracking-tight">
+                EMARA
               </Link>
-              <nav className="flex gap-6">
-                <Link href="/admin/dashboard" className="text-sm text-gray-700 hover:text-black transition-colors">
+              <nav className="flex gap-6 text-xs">
+                <Link href="/admin/dashboard" className="text-gray-500 hover:text-black transition-colors">
                   Dashboard
                 </Link>
-                <Link href="/admin/products" className="text-sm text-black font-medium border-b-2 border-black pb-4">
+                <Link href="/admin/products" className="text-black border-b border-black pb-3">
                   Productos
                 </Link>
-                <Link href="/admin/orders" className="text-sm text-gray-700 hover:text-black transition-colors">
+                <Link href="/admin/orders" className="text-gray-500 hover:text-black transition-colors">
                   Órdenes
-                </Link>
-                <Link href="/admin/customers" className="text-sm text-gray-700 hover:text-black transition-colors">
-                  Clientes
                 </Link>
               </nav>
             </div>
-
-            <div className="flex items-center gap-4">
-              <Link 
-                href="/" 
-                className="text-sm text-gray-600 hover:text-black transition-colors"
-                target="_blank"
-              >
-                Ver Tienda →
-              </Link>
-              <div className="border-l border-gray-300 pl-4">
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-gray-600 hover:text-black transition-colors"
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
-            </div>
+            <Link
+              href="/admin/products/new"
+              className="bg-black text-white px-4 py-2 text-xs font-medium hover:bg-gray-800 transition-colors"
+            >
+              + Nuevo
+            </Link>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-light text-gray-900 tracking-tight">
-              Productos
-            </h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Gestiona el catálogo de productos de tu tienda
-            </p>
-          </div>
-          <Link
-            href="/admin/products/new"
-            className="bg-black text-white px-6 py-3 text-sm font-light tracking-wider uppercase hover:bg-gray-800 transition-colors"
-          >
-            + Nuevo Producto
-          </Link>
+      <main className="max-w-7xl mx-auto px-6 py-6">
+        {/* Header & Stats */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-light tracking-tight mb-1">Productos</h1>
+          <p className="text-xs text-gray-500">{products.length} productos en catálogo</p>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Filtros Compactos */}
+        <div className="mb-4 space-y-3">
+          {/* Búsqueda */}
           <input
             type="text"
-            placeholder="Buscar por nombre, SKU o categoría..."
+            placeholder="Buscar por nombre o SKU..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black transition-colors"
+            className="w-full px-3 py-2 text-sm border border-gray-300 focus:outline-none focus:border-black transition-colors"
           />
+
+          {/* Filtros en Fila */}
+          <div className="flex gap-2 items-center">
+            {/* Categoría */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-3 py-2 text-xs border border-gray-300 focus:outline-none focus:border-black cursor-pointer bg-white"
+            >
+              <option value="all">Todas las categorías</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+
+            {/* Estado */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 text-xs border border-gray-300 focus:outline-none focus:border-black cursor-pointer bg-white"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="active">Activo</option>
+              <option value="inactive">Inactivo</option>
+            </select>
+
+            {/* Stock */}
+            <select
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              className="px-3 py-2 text-xs border border-gray-300 focus:outline-none focus:border-black cursor-pointer bg-white"
+            >
+              <option value="all">Todo el stock</option>
+              <option value="available">Stock alto (&gt;10)</option>
+              <option value="low">Stock bajo (1-10)</option>
+              <option value="out">Sin stock</option>
+            </select>
+
+            {/* Limpiar Filtros */}
+            {(categoryFilter !== 'all' || statusFilter !== 'all' || stockFilter !== 'all' || search) && (
+              <button
+                onClick={() => {
+                  setCategoryFilter('all');
+                  setStatusFilter('all');
+                  setStockFilter('all');
+                  setSearch('');
+                }}
+                className="px-3 py-2 text-xs text-gray-500 hover:text-black border border-gray-300 hover:border-black transition-colors"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Products Table */}
         {products.length === 0 ? (
-          <div className="bg-white border border-gray-200 p-12 text-center">
-            <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            <h3 className="text-lg font-light text-gray-900 mb-2">No hay productos</h3>
-            <p className="text-sm text-gray-500 mb-6">Comienza agregando tu primer producto al catálogo</p>
+          <div className="border border-gray-200 p-12 text-center">
+            <div className="text-4xl mb-3">📦</div>
+            <h3 className="text-sm font-medium text-gray-900 mb-1">No hay productos</h3>
+            <p className="text-xs text-gray-500 mb-4">Ajusta los filtros o crea un nuevo producto</p>
             <Link
               href="/admin/products/new"
-              className="inline-block bg-black text-white px-6 py-3 text-sm font-light tracking-wider uppercase hover:bg-gray-800 transition-colors"
+              className="inline-block bg-black text-white px-4 py-2 text-xs font-medium hover:bg-gray-800 transition-colors"
             >
-              + Crear Primer Producto
+              + Crear Producto
             </Link>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 overflow-hidden">
+          <div className="border border-gray-200">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Producto
+                  <th 
+                    onClick={() => handleSort('name')}
+                    className="px-4 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-widest cursor-pointer hover:text-black transition-colors select-none group"
+                  >
+                    <div className="flex items-center gap-1">
+                      Producto
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        {sortBy !== 'name' && '↕'}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    SKU
+                  <th 
+                    onClick={() => handleSort('category')}
+                    className="px-4 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-widest cursor-pointer hover:text-black transition-colors select-none group"
+                  >
+                    <div className="flex items-center gap-1">
+                      Categoría
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortBy === 'category' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        {sortBy !== 'category' && '↕'}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Categoría
+                  <th 
+                    onClick={() => handleSort('price')}
+                    className="px-4 py-2.5 text-right text-[10px] font-medium text-gray-500 uppercase tracking-widest cursor-pointer hover:text-black transition-colors select-none group"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Precio
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        {sortBy !== 'price' && '↕'}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Precio
+                  <th 
+                    onClick={() => handleSort('stock')}
+                    className="px-4 py-2.5 text-center text-[10px] font-medium text-gray-500 uppercase tracking-widest cursor-pointer hover:text-black transition-colors select-none group"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Stock
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortBy === 'stock' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        {sortBy !== 'stock' && '↕'}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stock
+                  <th 
+                    onClick={() => handleSort('status')}
+                    className="px-4 py-2.5 text-center text-[10px] font-medium text-gray-500 uppercase tracking-widest cursor-pointer hover:text-black transition-colors select-none group"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Estado
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        {sortBy !== 'status' && '↕'}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-right text-[10px] font-medium text-gray-500 uppercase tracking-widest">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="w-12 h-12 bg-gray-100 flex-shrink-0 mr-4">
-                          {/* Image placeholder */}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+              <tbody className="divide-y divide-gray-100">
+                {getSortedProducts(products).map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-100 flex-shrink-0 border border-gray-200"></div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">{product.name}</div>
+                          <div className="text-xs text-gray-400 font-mono">{product.sku}</div>
                           {product.featured && (
-                            <span className="text-xs text-yellow-600">⭐ Destacado</span>
+                            <span className="inline-flex items-center text-[10px] text-yellow-600 mt-0.5">
+                              ⭐ Destacado
+                            </span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.sku}
+                    <td className="px-4 py-3">
+                      <span className="text-xs text-gray-600">{product.category}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.category}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${product.price.toLocaleString('es-CL')}
+                    <td className="px-4 py-3 text-right">
+                      <div className="text-sm font-medium text-gray-900">
+                        ${product.price.toLocaleString('es-CL')}
+                      </div>
                       {product.salePrice && (
                         <div className="text-xs text-green-600">
-                          Oferta: ${product.salePrice.toLocaleString('es-CL')}
+                          ${product.salePrice.toLocaleString('es-CL')}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-sm ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center justify-center w-8 h-8 text-xs font-medium ${
+                        product.stock > 10 
+                          ? 'text-gray-900' 
+                          : product.stock > 0 
+                          ? 'text-yellow-600' 
+                          : 'text-red-600'
+                      }`}>
                         {product.stock}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${product.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {product.active ? 'Activo' : 'Inactivo'}
-                      </span>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-block w-2 h-2 rounded-full ${
+                        product.active ? 'bg-black' : 'bg-gray-300'
+                      }`}></span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-3 text-right">
                       <Link
                         href={`/admin/products/${product.id}`}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
+                        className="text-xs text-gray-400 hover:text-black transition-colors"
                       >
-                        Editar
+                        Editar →
                       </Link>
                     </td>
                   </tr>
@@ -266,25 +399,25 @@ export default function AdminProductsPage() {
           </div>
         )}
 
-        {/* Pagination */}
+        {/* Pagination Minimalista */}
         {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-center gap-2">
+          <div className="mt-4 flex items-center justify-between text-xs">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 border border-gray-300 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 border border-gray-300 hover:border-black hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              Anterior
+              ← Anterior
             </button>
-            <span className="text-sm text-gray-600">
-              Página {page} de {totalPages}
+            <span className="text-gray-500">
+              {page} / {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 border border-gray-300 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 border border-gray-300 hover:border-black hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              Siguiente
+              Siguiente →
             </button>
           </div>
         )}

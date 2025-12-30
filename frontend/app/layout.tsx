@@ -23,8 +23,8 @@ export default function RootLayout({
   const isAdminRoute = pathname?.startsWith('/admin');
 
   return (
-    <html lang="es">
-      <body className={`${inter.variable} antialiased`}>
+    <html lang="es" suppressHydrationWarning>
+      <body className={`${inter.variable} antialiased`} suppressHydrationWarning>
         {isAdminRoute ? (
           // Admin routes: sin Header ni Footer
           children

@@ -1,73 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { verifyToken } from '@/lib/auth/server';
+import { PrismaClient } from '@prisma/client';
 
-async function checkAuth(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  const token = authHeader.substring(7);
-  return await verifyToken(token);
-}
+const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await checkAuth(request);
-    if (!auth) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
     const { id } = await params;
-
+    console.log('Fetching order with ID:', id);
+    
     const order = await prisma.order.findUnique({
-      where: { id },
+      where: {
+        id
+      },
       include: {
         customer: true,
-        orderItems: {
-          include: {
-            product: true
-          }
-        }
+        orderItems: true
       }
     });
 
+    console.log('Order found:', order ? 'Yes' : 'No');
+    
     if (!order) {
-      return NextResponse.json(
-        { error: 'Orden no encontrada' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    // Parse JSON fields
-    const shippingAddress = typeof order.shippingAddress === 'string' 
-      ? JSON.parse(order.shippingAddress) 
-      : order.shippingAddress;
+    // Parse shipping address if it's JSON
+    let shippingAddressData: any = {};
+    try {
+      shippingAddressData = JSON.parse(order.shippingAddress);
+    } catch (e) {
+      console.error('Error parsing shipping address:', e);
+    }
 
-    const billingAddress = order.billingAddress && typeof order.billingAddress === 'string'
-      ? JSON.parse(order.billingAddress)
-      : order.billingAddress;
+    // Format response to match frontend expectations
+    const formattedOrder = {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customerEmail: order.customer.email,
+      customerFirstName: order.customer.firstName,
+      customerLastName: order.customer.lastName,
+      customerPhone: order.customer.phone || '',
+      shippingAddress: shippingAddressData.street || shippingAddressData.address || '',
+      shippingCity: shippingAddressData.city || '',
+      shippingRegion: shippingAddressData.region || '',
+      shippingPostalCode: shippingAddressData.postalCode || '',
+      subtotal: order.subtotal,
+      shippingCost: order.shipping,
+      total: order.total,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      authorizationCode: order.authorizationCode,
+      transactionDate: order.transactionDate,
+      cardNumber: order.cardNumber,
+      responseCode: order.responseCode?.toString(),
+      createdAt: order.createdAt,
+      items: order.orderItems.map((item: any) => ({
+        id: item.id,
+        productName: item.name,
+        sku: item.sku,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.subtotal
+      }))
+    };
 
-    return NextResponse.json({
-      success: true,
-      order: {
-        ...order,
-        shippingAddress,
-        billingAddress
-      }
-    });
-
+    return NextResponse.json({ order: formattedOrder });
   } catch (error) {
-    console.error('Get order error:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener la orden' },
-      { status: 500 }
-    );
+    console.error('Error fetching order detail:', error);
+    return NextResponse.json({ error: 'Error al obtener detalle de orden' }, { status: 500 });
   }
 }
